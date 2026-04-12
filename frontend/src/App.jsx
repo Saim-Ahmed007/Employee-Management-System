@@ -21,7 +21,7 @@ function App() {
       <Route element={<Layout/>}>
       <Route path='/dashboard' element={<Dashboard/>} />
       <Route path='/employees' element={<Employees/>} />
-      <Route path='/attendence' element={<Attendence/>} />
+      <Route path='/attendance' element={<Attendence/>} />
       <Route path='/leave' element={<Leave/>} />
       <Route path='/payslips' element={<Payslips/>} />
       <Route path='/settings' element={<Settings/>} />

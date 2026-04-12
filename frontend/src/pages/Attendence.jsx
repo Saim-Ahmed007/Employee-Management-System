@@ -3,7 +3,7 @@
 const Attendence = () => {
     return (
         <div>
-            
+            attendence
         </div>
     );
 };
