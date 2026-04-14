@@ -1,0 +1,109 @@
+import { Loader2Icon, PlusIcon, X } from "lucide-react";
+import { useState } from "react";
+
+const GeneratePayslipForm = ({ employees, onSuccess }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  if (!isOpen)
+    return (
+      <button
+        onClick={() => setIsOpen(true)}
+        className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center"
+      >
+        <PlusIcon className="w-4 h-4" />
+        Generate Payslip
+      </button>
+    );
+  const handleSubmit = (e) => {
+    e.preventDefault();
+  };
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-slide-up">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold text-slate-900">
+            Generate Monthly Payslip
+          </h3>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="text-slate-400 hover:text-slate-600 p-1"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Emloyee
+            </label>
+            <select name="employeeId" required>
+              {employees.map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.firstName} {employee.lastName} ({employee.position})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Month
+              </label>
+              <select name="month">
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Month
+              </label>
+              <input
+                type="number"
+                name="year"
+                defaultValue={new Date().getFullYear()}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Basic Salary
+            </label>
+            <input type="number" name="salary" required placeholder="5000" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Allowances
+            </label>
+            <input type="number" name="allowances" defaultValue="0" />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+              Deductions
+            </label>
+            <input type="number" name="deductions" defaultValue="0" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button onClick={()=> setIsOpen(false)} type="button" className="btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary flex items-center" disabled={loading}>
+                {loading && <Loader2Icon className="animate-spin h-4 w-4 mr-2"/>}
+              Generate
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default GeneratePayslipForm;
