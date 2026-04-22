@@ -56,11 +56,11 @@ const PaySlipList = ({isAdmin, paySlips}) => {
                  {format(new Date(payslip.year, payslip.month -1), "MMMM yyyy")}
                 </td>
 
-                <td className="px-4 py-3 text-sm text-slate-700 whitespace-nowrap">
+                <td className="px-4 py-3 text-sm font-medium text-slate-700 whitespace-nowrap">
                   ${payslip.basicSalary?.toLocaleString()}
                 </td>
 
-                <td className="px-4 py-3 text-sm text-slate-700 max-w-50 truncate">
+                <td className="px-4 py-3 text-sm font-medium text-slate-700 max-w-50 truncate">
                   ${payslip.netSalary?.toLocaleString()}
                 </td>
                 <td className="px-4 py-3 text-sm text-slate-700">

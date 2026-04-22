@@ -94,9 +94,9 @@ const Attendance = () => {
                 attendance.map((record, i) => (
                   <tr key={record._id} className={`border-b border-slate-50 hover:bg-slate-50 transition-colors ${i === attendance.length - 1 ? "border-none" : ""}`}>
                     <td className="px-6 py-4 text-slate-700 font-medium">{formatDate(record.date)}</td>
-                    <td className="px-6 py-4 text-slate-600">{formatTime(record.checkIn)}</td>
-                    <td className="px-6 py-4 text-slate-600">{formatTime(record.checkOut)}</td>
-                    <td className="px-6 py-4 text-slate-600">{formatWorkingHours(record.workingHours)}</td>
+                    <td className="px-6 py-4 text-slate-600 font-medium">{formatTime(record.checkIn)}</td>
+                    <td className="px-6 py-4 text-slate-600 font-medium">{formatTime(record.checkOut)}</td>
+                    <td className="px-6 py-4 text-slate-600 font-medium">{formatWorkingHours(record.workingHours)}</td>
                     <td className="px-6 py-4">
                       <span className="text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-md">
                         {record.dayType}
