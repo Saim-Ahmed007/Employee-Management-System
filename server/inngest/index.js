@@ -14,56 +14,61 @@ const autoCheckOut = inngest.createFunction(
     const { employeeId, attendanceId, checkInTime } = event.data;
     const checkInMs = new Date(checkInTime).getTime();
 
-    // Wait 9 hours anchored to check-in time
     await step.sleepUntil(
       "wait-for-9-hours",
       new Date(checkInMs + 9 * 60 * 60 * 1000)
     );
 
-    let attendance = await step.run("get-attendance", () =>
-      Attendance.findById(attendanceId)
+    const attendance = await step.run("get-attendance", () =>
+      Attendance.findById(attendanceId).lean()
     );
 
     if (!attendance?.checkOut) {
       const employee = await step.run("get-employee", () =>
-        Employee.findById(employeeId)
+        Employee.findById(employeeId).lean() // ✅ .lean() for safe serialization
       );
 
-      // Send reminder email here using employee.email
-      await sendEmail({
-        to: employee.email,
-        subject: "Attendance check-out reminder",
-        body: `<div style="max-width: 600px;">
-                    <h2>Hi ${employee.firstName}, 👋</h2>
-                    <p style="font-size: 16px;">You have a check-in in ${employee.department} today:</p>
-                    <p style="font-size: 18px; font-weight: bold; color: #007bff; margin: 8px 0;">${attendance?.checkIn?.toLocaleTimeString()}</p>
-                    <p style="font-size: 16px;">Please make sure to check-out in one hour.</p>
-                    <p style="font-size: 16px;">If you have any questions, please contact your admin.</p>
-                    <br />
-                    <p style="font-size: 16px;">Best Regards,</p>
-                    <p style="font-size: 16px;">EMS</p>
-                </div>
-`
+      // ✅ Wrapped in step.run
+      await step.run("send-reminder-email", async () => {
+        await sendEmail({
+          to: employee.email,
+          subject: "Attendance check-out reminder",
+          body: `<div style="max-width: 600px;">
+            <h2>Hi ${employee.firstName}, 👋</h2>
+            <p style="font-size: 16px;">You have been checked in since:</p>
+            <p style="font-size: 18px; font-weight: bold; color: #007bff; margin: 8px 0;">
+              ${new Date(attendance.checkIn).toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka' })}
+            </p>
+            <p style="font-size: 16px;">Please make sure to check out within one hour.</p>
+            <p style="font-size: 16px;">If you have any questions, please contact your admin.</p>
+            <br />
+            <p style="font-size: 16px;">Best Regards,<br/><strong>EMS</strong></p>
+          </div>`
+        })
       })
 
-      // Wait until 10 hours after check-in
       await step.sleepUntil(
         "wait-for-10-hours",
         new Date(checkInMs + 10 * 60 * 60 * 1000)
       );
 
-      attendance = await step.run("get-attendance-final", () =>
-        Attendance.findById(attendanceId)
+      // ✅ Re-fetch to check latest status
+      const finalAttendance = await step.run("get-attendance-final", () =>
+        Attendance.findById(attendanceId).lean()
       );
 
-      if (!attendance?.checkOut) {
+      if (!finalAttendance?.checkOut) {
+        // ✅ Re-fetch live Mongoose doc inside step for .save()
         await step.run("auto-checkout", async () => {
-          attendance.checkOut = new Date(checkInMs + 10 * 60 * 60 * 1000); // ✅ 10hrs after check-in
-          attendance.workingHours = 10;
-          attendance.dayType = "Half Day";
-          attendance.status = "LATE";
-          await attendance.save();
-        });
+          const doc = await Attendance.findById(attendanceId)
+          if (doc && !doc.checkOut) {
+            doc.checkOut = new Date(checkInMs + 10 * 60 * 60 * 1000)
+            doc.workingHours = 10
+            doc.dayType = "Half Day"
+            doc.status = "LATE"
+            await doc.save()
+          }
+        })
       }
     }
   }
@@ -71,37 +76,46 @@ const autoCheckOut = inngest.createFunction(
 
 //send email to admin if admin doesnot take action on leave application within 24 hours
 const leaveApplicationReminder = inngest.createFunction(
-    {id: "leave-application-reminder", triggers: [{ event: "leave/pending" }]},
-    async({event, step}) => {
-       const {leaveApplicationId} = event.data
-       const checkInMs = new Date(checkInTime).getTime();
-       
-       //wait 24 hours
-       await step.sleepUntil('wait-for-24-hours',  new Date(checkInMs + 24 * 60 * 60 * 1000))
-       const leaveApplication = await LeaveApplication.findById(leaveApplicationId)
+  { id: "leave-application-reminder", triggers: [{ event: "leave/pending" }] },
+  async ({ event, step }) => {
+    const { leaveApplicationId, submittedAt } = event.data; // ✅ correct variables
+    const submittedMs = new Date(submittedAt).getTime();
 
-       if(leaveApplication.status === "PENDING"){
-        const employee = await LeaveApplication.findById(leaveApplication.employeeId)
+    // Wait 24 hours from submission
+    await step.sleepUntil(
+      "wait-for-24-hours",
+      new Date(submittedMs + 24 * 60 * 60 * 1000)
+    );
 
-        //send reminder email to admin to take action on leave application
+    // ✅ DB call wrapped in step.run
+    const leaveApplication = await step.run("get-leave-application", () =>
+      LeaveApplication.findById(leaveApplicationId).lean()
+    );
+
+    if (leaveApplication?.status === "PENDING") {
+      // ✅ Correct model
+      const employee = await step.run("get-employee", () =>
+        Employee.findById(leaveApplication.employeeId.toString()).lean()
+      );
+
+      await step.run("send-admin-reminder", async () => {
         await sendEmail({
-            to: process.env.ADMIN_EMAIL,
-            subject: "Leave Application Reminder",
-            body: `<div style="max-width: 600px;">
-                <h2>Hi Admin, 👋</h2>
-                <p style="font-size: 16px;">You have a leave application in ${employee.department} today:</p>
-                <p style="font-size: 18px; font-weight: bold; color: #007bff; margin: 8px 0;">${leaveApplication?.startDate?.toLocaleDateString()}</p>
-                <p style="font-size: 16px;">Please make sure to take action on this leave application.</p>
-                <br />
-                <p style="font-size: 16px;">Best Regards,</p>
-                <p style="font-size: 16px;">EMS</p>
-            </div>
-`
-        })
-       }
-
+          to: process.env.ADMIN_EMAIL,
+          subject: "Leave Application Reminder",
+          body: `<div style="max-width: 600px;">
+            <h2>Hi Admin, 👋</h2>
+            <p style="font-size: 16px;">A leave application from <strong>${employee.firstName} ${employee.lastName}</strong> (${employee.department}) is still pending after 24 hours.</p>
+            <p style="font-size: 16px;">Leave Period: <strong>${new Date(leaveApplication.startDate).toLocaleDateString()}</strong> → <strong>${new Date(leaveApplication.endDate).toLocaleDateString()}</strong></p>
+            <p style="font-size: 16px;">Reason: ${leaveApplication.reason}</p>
+            <p style="font-size: 16px;">Please log in and take action on this application.</p>
+            <br />
+            <p style="font-size: 16px;">Best Regards,<br/><strong>EMS</strong></p>
+          </div>`
+        });
+      });
     }
-)
+  }
+);
 
 //cron: check attendance at 11.30 AM and email absesnt employees 
 const attendanceReminderCron = inngest.createFunction(
@@ -164,7 +178,7 @@ const attendanceReminderCron = inngest.createFunction(
         if (absentEmployees.length > 0) {
             await step.run('send-reminder-emails', async () => {
                 const emailPromises = absentEmployees.map((emp) =>{
-                    sendEmail({
+                    return sendEmail({
                         to: emp.email,
                         subject: "Attendance Reminder - please mark your attendance",
                         body: `<div style="max-width: 600px; font-family: Arial, sans-serif;">
@@ -180,6 +194,7 @@ const attendanceReminderCron = inngest.createFunction(
                             </div>`
                     })
                 }) 
+                await Promise.all(emailPromises)
             })
         }
 
