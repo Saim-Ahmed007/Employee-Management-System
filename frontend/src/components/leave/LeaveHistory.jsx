@@ -66,7 +66,7 @@ const LeaveHistory = ({ leaves, isAdmin, onUpdate }) => {
               >
                 {isAdmin && (
                   <td className="px-4 py-3 text-sm font-medium text-slate-700 whitespace-nowrap">
-                    {record.employee.firstName} {record.employee.lastName}
+                    {record.employee?.firstName} {record.employee?.lastName}
                   </td>
                 )}
 

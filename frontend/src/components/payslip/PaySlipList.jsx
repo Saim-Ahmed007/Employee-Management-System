@@ -48,7 +48,7 @@ const PaySlipList = ({isAdmin, paySlips}) => {
               >
                 {isAdmin && (
                   <td className="px-4 py-3 text-sm font-medium text-slate-700 whitespace-nowrap">
-                    {payslip.employee.firstName} {payslip.employee.lastName}
+                    {payslip.employee?.firstName} {payslip.employee?.lastName}
                   </td>
                 )}
 
