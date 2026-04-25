@@ -35,22 +35,22 @@ const Attendance = () => {
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [clockedIn, setClockedIn] = useState(false);
-  const [clockLoading, setClockLoading] = useState(false); // ✅ loading for clock button
+  const [clockLoading, setClockLoading] = useState(false); //loading for clock button
 
   const fetchAttendance = useCallback(async () => {
     try {
-      const res = await api.get('/attendance/session') // ✅ correct endpoint
+      const res = await api.get('/attendance/session') //correct endpoint
       const json = res.data
       setAttendance(json.data || [])
 
-      // ✅ fixed typo: emoloyee → employee
-      // ✅ check if today's record exists and has no checkOut → means clocked in
+      //fixed typo: emoloyee → employee
+      //check if today's record exists and has no checkOut → means clocked in
       const todayRecord = json.data?.find(a => {
         const recordDate = new Date(a.date).toDateString()
         const today = new Date().toDateString()
         return recordDate === today
       })
-      setClockedIn(!!todayRecord && !todayRecord.checkOut) // ✅ true only if checked in but not out
+      setClockedIn(!!todayRecord && !todayRecord.checkOut) //true only if checked in but not out
 
     } catch (error) {
       toast.error(error.response?.data?.error || error.message)
@@ -61,7 +61,7 @@ const Attendance = () => {
 
   useEffect(() => { fetchAttendance(); }, [fetchAttendance]);
 
-  // ✅ Real API call for clock in/out
+  //Real API call for clock in/out
   const handleClockInOut = async () => {
     setClockLoading(true)
     try {
@@ -71,7 +71,7 @@ const Attendance = () => {
       if (type === "CHECK_IN") {
         toast.success("Clocked in successfully!")
         setClockedIn(true)
-        setAttendance(prev => [data, ...prev]) // ✅ prepend new record
+        setAttendance(prev => [data, ...prev]) //prepend new record
       } else if (type === "CHECK_OUT") {
         toast.success("Clocked out successfully!")
         setClockedIn(false)
@@ -158,7 +158,7 @@ const Attendance = () => {
                         ${record.status === "PRESENT"
                           ? "text-emerald-600 bg-emerald-50 border-emerald-100"
                           : record.status === "LATE"
-                            ? "text-amber-600 bg-amber-50 border-amber-100" // ✅ LATE status style
+                            ? "text-amber-600 bg-amber-50 border-amber-100" //LATE status style
                             : "text-red-500 bg-red-50 border-red-100"
                         }`}>
                         {record.status}
@@ -174,7 +174,7 @@ const Attendance = () => {
 
       {/* Clock In / Out FAB */}
       <button
-        onClick={handleClockInOut} // ✅ real API call
+        onClick={handleClockInOut} //real API call
         disabled={clockLoading}
         className={`fixed bottom-6 right-6 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-lg text-white transition-all active:scale-[0.97] disabled:opacity-70
           ${clockedIn ? "bg-red-500 hover:bg-red-600" : "bg-indigo-600 hover:bg-indigo-700"}`}

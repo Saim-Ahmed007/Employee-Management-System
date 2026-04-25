@@ -6,7 +6,6 @@ if (!MONGODB_URI) {
   throw new Error("Please define the MONGODB_URI in your environment variables");
 }
 
-// Optional: cache connection (useful for serverless / Next.js)
 let cached = global.mongoose || { conn: null, promise: null };
 
 const connectDB = async () => {
@@ -16,7 +15,7 @@ const connectDB = async () => {
 
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
-      dbName: "fullstack-ems", // change this
+      dbName: "fullstack-ems",
     })
     .then((mongooseInstance) => {
       console.log("MongoDB connected");
@@ -32,7 +31,6 @@ const connectDB = async () => {
   return cached.conn;
 };
 
-// store in global (important for hot reload in dev)
 global.mongoose = cached;
 
 export default connectDB;

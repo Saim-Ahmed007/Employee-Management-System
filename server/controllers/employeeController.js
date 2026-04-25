@@ -7,8 +7,8 @@ export const getEmployees = async (req, res) => {
   try {
     const { department } = req.query;
 
-    const where = { isDeleted: false }; // ✅ exclude soft-deleted employees
-    if (department && department !== "All Departments") where.department = department; // ✅ guard against "All Departments" string
+    const where = { isDeleted: false };
+    if (department && department !== "All Departments") where.department = department; 
 
     const employees = await Employee.find(where)
       .sort({ createdAt: -1 })

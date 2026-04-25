@@ -28,7 +28,7 @@ const autoCheckOut = inngest.createFunction(
         Employee.findById(employeeId).lean() // ✅ .lean() for safe serialization
       );
 
-      // ✅ Wrapped in step.run
+      //Wrapped in step.run
       await step.run("send-reminder-email", async () => {
         await sendEmail({
           to: employee.email,
@@ -52,13 +52,13 @@ const autoCheckOut = inngest.createFunction(
         new Date(checkInMs + 10 * 60 * 60 * 1000)
       );
 
-      // ✅ Re-fetch to check latest status
+      //Re-fetch to check latest status
       const finalAttendance = await step.run("get-attendance-final", () =>
         Attendance.findById(attendanceId).lean()
       );
 
       if (!finalAttendance?.checkOut) {
-        // ✅ Re-fetch live Mongoose doc inside step for .save()
+        //Re-fetch live Mongoose doc inside step for .save()
         await step.run("auto-checkout", async () => {
           const doc = await Attendance.findById(attendanceId)
           if (doc && !doc.checkOut) {
@@ -87,13 +87,12 @@ const leaveApplicationReminder = inngest.createFunction(
       new Date(submittedMs + 24 * 60 * 60 * 1000)
     );
 
-    // ✅ DB call wrapped in step.run
+    //DB call wrapped in step.run
     const leaveApplication = await step.run("get-leave-application", () =>
       LeaveApplication.findById(leaveApplicationId).lean()
     );
 
     if (leaveApplication?.status === "PENDING") {
-      // ✅ Correct model
       const employee = await step.run("get-employee", () =>
         Employee.findById(leaveApplication.employeeId.toString()).lean()
       );

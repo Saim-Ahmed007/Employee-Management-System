@@ -99,7 +99,7 @@ const EditEmployeeModal = ({ employee, onClose, onSave }) => {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-      // ✅ Pass merged updated employee back to parent
+      //Pass merged updated employee back to parent
       onSave({
         ...employee,
         ...form,
