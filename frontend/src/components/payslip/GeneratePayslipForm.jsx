@@ -1,5 +1,7 @@
 import { Loader2Icon, PlusIcon, X } from "lucide-react";
 import { useState } from "react";
+import api from "../../api/axios.js";
+import toast from "react-hot-toast";
 
 const GeneratePayslipForm = ({ employees, onSuccess }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,8 +16,20 @@ const GeneratePayslipForm = ({ employees, onSuccess }) => {
         Generate Payslip
       </button>
     );
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    try {
+      await api.post("/payslips", data);
+      setIsOpen(false);
+      onSuccess();
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error.message);
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -38,7 +52,10 @@ const GeneratePayslipForm = ({ employees, onSuccess }) => {
             </label>
             <select name="employeeId" required>
               {employees.map((employee) => (
-                <option key={employee.id} value={employee.id}>
+                <option
+                  key={employee._id || employee.id}
+                  value={employee._id || employee.id}
+                >
                   {employee.firstName} {employee.lastName} ({employee.position})
                 </option>
               ))}
@@ -60,7 +77,7 @@ const GeneratePayslipForm = ({ employees, onSuccess }) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Month
+                Year
               </label>
               <input
                 type="number"
@@ -74,29 +91,42 @@ const GeneratePayslipForm = ({ employees, onSuccess }) => {
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Basic Salary
             </label>
-            <input type="number" name="salary" required placeholder="5000" />
+            <input
+              type="number"
+              name="basicSalary"
+              required
+              placeholder="5000"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Allowances
-            </label>
-            <input type="number" name="allowances" defaultValue="0" />
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Allowances
+              </label>
+              <input type="number" name="allowances" defaultValue="0" />
             </div>
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-              Deductions
-            </label>
-            <input type="number" name="deductions" defaultValue="0" />
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Deductions
+              </label>
+              <input type="number" name="deductions" defaultValue="0" />
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <button onClick={()=> setIsOpen(false)} type="button" className="btn-secondary">
+            <button
+              onClick={() => setIsOpen(false)}
+              type="button"
+              className="btn-secondary"
+            >
               Cancel
             </button>
-            <button type="submit" className="btn-primary flex items-center" disabled={loading}>
-                {loading && <Loader2Icon className="animate-spin h-4 w-4 mr-2"/>}
+            <button
+              type="submit"
+              className="btn-primary flex items-center"
+              disabled={loading}
+            >
+              {loading && <Loader2Icon className="animate-spin h-4 w-4 mr-2" />}
               Generate
             </button>
           </div>

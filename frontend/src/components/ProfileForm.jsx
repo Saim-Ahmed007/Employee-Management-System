@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Loader2Icon, Save, User } from "lucide-react";
+import api from "../api/axios.js";
 
 const ProfileForm = ({ initialData, onSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -8,7 +9,19 @@ const ProfileForm = ({ initialData, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    setLoading(true)
+    setError("")
+    setMessage("")
+    const formData = new FormData(e.currentTarget)
+    try {
+      await api.post('/profile', formData)
+      setMessage("Profile updated successfully")
+      onSuccess?.()
+    } catch (error) {
+      setError(error?.response?.data?.error || error.message)
+    } finally{
+      setLoading(false)
+    }
   };
 
   return (
@@ -30,7 +43,7 @@ const ProfileForm = ({ initialData, onSuccess }) => {
       )}
       {message && (
         <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl text-sm border border-emerald-200 mb-6 flex items-center gap-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0">
+          <div className="rounded-full mt-1.5 shrink-0">
             {message}
           </div>
         </div>

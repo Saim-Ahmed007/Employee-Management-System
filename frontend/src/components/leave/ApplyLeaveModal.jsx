@@ -1,5 +1,7 @@
 import { CalendarDays, FileText, Loader2Icon, Send, X } from 'lucide-react';
 import { useState } from 'react';
+import api from '../../api/axios.js';
+import toast from 'react-hot-toast';
 
 const ApplyLeaveModal = ({ open, onClose, onSuccess }) => {
     const [loading, setLoading] = useState(false)
@@ -8,9 +10,20 @@ const ApplyLeaveModal = ({ open, onClose, onSuccess }) => {
     tomorrow.setDate(tomorrow.getDate() + 1)
     const minDate = tomorrow.toISOString().split('T')[0]
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async(e) => {
         e.preventDefault();
         setLoading(true);
+        const formData = new FormData(e.currentTarget)
+        const data = Object.fromEntries(formData.entries())
+        try {
+            await api.post('/leave', data)
+            onSuccess()
+            onClose()
+        } catch (error) {
+            toast.error(error.response?.data?.error || error.message)
+        }finally{
+            setLoading(false)
+        }
     }
 
     if(!open) return null;
@@ -45,11 +58,11 @@ const ApplyLeaveModal = ({ open, onClose, onSuccess }) => {
                             Duration
                         </label>
                         <div className='grid grid-cols-2 gap-4'>
-                            <div className='block text-xs text-slate-400 mb-1'>
+                            <div className='block text-xs text-slate-900 mb-1'>
                                 <span>From</span>
                                 <input type="date" name="startDate" required min={minDate} />
                             </div>
-                            <div className='block text-xs text-slate-400 mb-1'>
+                            <div className='block text-xs text-slate-900 mb-1'>
                                 <span>To</span>
                                 <input type="date" name="endDate" required min={minDate} />
                             </div>
@@ -67,7 +80,7 @@ const ApplyLeaveModal = ({ open, onClose, onSuccess }) => {
                     <div className='flex gap-3 pt-2'>
                     <button onClick={onClose} type='button' className='btn-secondary flex-1'>Cancel</button>
 
-                    <button onClick={onClose} disabled={loading} type='submit' className='btn-primary flex-1 flex items-center justify-center gap-2'>
+                    <button disabled={loading} type='submit' className='btn-primary flex-1 flex items-center justify-center gap-2'>
                         {loading ? <Loader2Icon className='w-4 h-4 animate-spin'/>: <Send className='w-4 h-4'/>}
                         {loading ? 'Submitting...': 'Submit'}
                     </button>

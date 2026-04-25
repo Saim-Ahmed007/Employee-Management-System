@@ -1,17 +1,31 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import LoginLeftSide from "./LoginLeftSide";
 import { ArrowLeftIcon, EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
+import {useAuth} from '../context/AuthContext'
+import toast from 'react-hot-toast'
 
 const LoginForm = ({ role, title, subTitle }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const {login} = useAuth()
+  const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
-    console.log(formData);
+    setError("")
+    setLoading(true)
+    try {
+      await login(email, password, role)
+      navigate('/dashboard')
+    } catch (error) {
+      toast.error(error.response?.data?.error || error.message || "Login failed")
+    }finally{
+      setLoading(false)
+    }
   };
 
   return (
@@ -52,8 +66,8 @@ const LoginForm = ({ role, title, subTitle }) => {
                 type="email"
                 required
                 placeholder="john@example.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent placeholder-gray-300 transition"
               />
             </div>
@@ -68,8 +82,8 @@ const LoginForm = ({ role, title, subTitle }) => {
                   type={showPassword ? "text" : "password"}
                   required
                   placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent placeholder-gray-300 transition pr-11"
                 />
                 <button
@@ -86,7 +100,7 @@ const LoginForm = ({ role, title, subTitle }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+              className="w-full py-3 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex justify-center items-center"
             >
                 {loading && <Loader2Icon className="animate-spin h-4 w-4 mr-2"/>}
               Sign in as {role}

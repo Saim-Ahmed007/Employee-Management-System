@@ -34,6 +34,7 @@ export const clockInOut = async(req, res) => {
                 data: {
                     employeeId: employee._id,
                     attendanceId: attendance._id,
+                    checkInTime: now.toISOString()
                 }
             })
 

@@ -14,7 +14,7 @@ const StatCard = ({ label, value, icon: Icon }) => (
 const EmployeeDashboard = ({data}) => {
     const { currentMonthAttendance, pendingLeaves, latestPayslip, employee } = data;
     const subtitle = `${employee.position} - ${employee.department}`;
-    const salary = `$${latestPayslip.netSalary.toLocaleString()}`;
+    const salary = latestPayslip ? `$${latestPayslip.netSalary.toLocaleString()}` : "N/A";
     return (
         <div className="flex-1 min-h-screen bg-slate-50 p-8">
       {/* Header */}

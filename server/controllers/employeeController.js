@@ -7,8 +7,8 @@ export const getEmployees = async (req, res) => {
   try {
     const { department } = req.query;
 
-    const where = {};
-    if (department) where.department = department;
+    const where = { isDeleted: false }; // ✅ exclude soft-deleted employees
+    if (department && department !== "All Departments") where.department = department; // ✅ guard against "All Departments" string
 
     const employees = await Employee.find(where)
       .sort({ createdAt: -1 })
@@ -133,7 +133,7 @@ export const deleteEmployee = async(req,res) => {
     employee.isDeleted = true
     employee.employmentStatus = "INACTIVE"
     await employee.save()
-    await res.json({success: true})
+    await res.status(200).json({success: true})
   } catch (error) {
     return res.status(500).json({ error: "Failed to delete employee" });
   }

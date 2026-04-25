@@ -1,10 +1,20 @@
 import React, { useState } from "react";
+import api from './../../api/axios.js';
+import toast from "react-hot-toast";
 
 const LeaveHistory = ({ leaves, isAdmin, onUpdate }) => {
   const [processing, setProcessing] = useState(null);
 
-  const handleStatusUpdate = (id, status) => {
+  const handleStatusUpdate = async(id, status) => {
     setProcessing(id);
+    try {
+      await api.patch(`/leave/${id}`, {status})
+      onUpdate()
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error.message)
+    } finally{
+      setProcessing(null)
+    }
   };
 
   return (
@@ -112,7 +122,7 @@ const LeaveHistory = ({ leaves, isAdmin, onUpdate }) => {
                   <td className="px-4 py-3">
                     {record.status === "PENDING" ? (
                       <div className="flex items-center gap-2">
-                        <button className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-green-50 text-green-500 border border-green-200 transition-colors">
+                        <button onClick={() => handleStatusUpdate(record._id, "APPROVED")} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-green-100 text-green-500 border border-green-200 transition-colors cursor-pointer">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="w-3.5 h-3.5"
@@ -126,7 +136,7 @@ const LeaveHistory = ({ leaves, isAdmin, onUpdate }) => {
                             />
                           </svg>
                         </button>
-                        <button className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-red-400 border border-red-200 transition-colors">
+                        <button onClick={() => handleStatusUpdate(record._id, "REJECTED")}  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-100 text-red-400 border border-red-200 transition-colors cursor-pointer">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="w-3.5 h-3.5"

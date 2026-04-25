@@ -51,10 +51,10 @@ export const getDashboard = async(req,res) => {
                 currentMonthAttendance,
                 pendingLeaves,
                 latestPayslip: latestPayslip ? {...latestPayslip, id: latestPayslip._id.toString()} : null
-            })  
+            })
 
         }
     } catch (error) {
-        return res.satus(500).json({error: "Failed"})
+        return res.status(500).json({error: "Failed"})
     }
 }

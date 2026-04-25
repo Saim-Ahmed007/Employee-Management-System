@@ -1,11 +1,27 @@
 import { Loader2Icon, LockIcon, X } from "lucide-react";
 import { useState } from "react";
+import api from "../api/axios.js";
 
 const ChangePasswordModal = ({open, onClose}) => {
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState({type: "", text: ""})
-    const handleSubmit = (e) => {
+    const handleSubmit = async(e) => {
         e.preventDefault()
+        setLoading(true)
+        setMessage({type: "", text: ""})
+        const formData = new FormData(e.currentTarget)
+        const currentPassword = formData.get("currentPassword")
+        const newPassword = formData.get("newPassword")
+        try {
+           const {data} =  await api.post('/auth/change-password', {currentPassword, newPassword})
+           if(!data.message) throw new Error(data.error || "Failed")
+            setMessage({type: "success", text: "password updated successfully"})
+            e.target.reset()
+        } catch (error) {
+            setMessage({type: "error", text: error.message})
+        } finally{
+            setLoading(false)
+        }
     }
     if(!open) return null
     return (
@@ -27,11 +43,11 @@ const ChangePasswordModal = ({open, onClose}) => {
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">Current Password</label>
-                        <input type="password" name="currentpassword" required />
+                        <input type="password" name="currentPassword" required />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">New Password</label>
-                        <input type="password" name="newpassword" required />
+                        <input type="password" name="newPassword" required />
                     </div>
 
                     <div className="flex gap-3 pt-2">

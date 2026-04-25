@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { dummyEmployeeData } from "../assets/assets";
 import Loading from "../components/Loading";
 import { Search, Plus, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import AddEmployeeModal from "../components/AddEmployeeModal";
 import EditEmployeeModal from "../components/EditEmployeeModal";
+import api from "../api/axios.js";
+import toast from "react-hot-toast";
+
 
 const getInitials = (firstName, lastName) =>
   `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
@@ -81,12 +83,16 @@ const Employees = () => {
   const [editingEmployee, setEditingEmployee] = useState(null);
 
   const fetchEmployees = useCallback(async () => {
-    setLoading(true);
-    setEmployees(dummyEmployeeData);
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-  }, []);
+    try {
+      const url = selectedDept ? "/employees" : `/employees?department=${selectedDept}`
+      const res = await api.get(url)
+      setEmployees(res.data)
+    } catch (error) {
+      console.error(error.message)
+    }finally{
+      setLoading(false)
+    }
+  }, [selectedDept]);
 
    const handleAdd = (newEmployee) => {
     setEmployees((prev) => [newEmployee, ...prev]);
@@ -102,9 +108,15 @@ const Employees = () => {
   );
 };
 
-  const handleDelete = (employee) => {
+  const handleDelete = async(employee) => {
     if (window.confirm(`Delete ${employee.firstName} ${employee.lastName}?`)) {
-      setEmployees((prev) => prev.filter((e) => e._id !== employee._id));
+       try {
+            await api.delete(`/employees/${employee._id}`)
+            setEmployees((prev) => prev.filter((e) => e._id !== employee._id));
+            toast.success("Employee deleted successfully")
+        } catch (error) {
+            toast.error(error.response?.data?.error || "Failed to delete employee")
+        }
     }
   };
 
@@ -115,8 +127,8 @@ const Employees = () => {
 
   const departments = [
     "All Departments",
-    ...new Set(dummyEmployeeData.map((e) => e.department)),
-  ];
+    ...new Set(employees.map((e) => e.department)),
+];
 
   const filtered = employees.filter((e) => {
     const fullName = `${e.firstName} ${e.lastName}`.toLowerCase();

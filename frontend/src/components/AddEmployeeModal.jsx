@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import { X, Upload } from 'lucide-react';
+import api from '../api/axios.js'; // ✅ import api
+import toast from 'react-hot-toast';
 
 const DEPARTMENTS = ["Engineering", "IT Support", "HR", "Finance", "Marketing", "Operations"];
 const STATUSES = ["ACTIVE", "INACTIVE"];
@@ -8,10 +10,9 @@ const defaultForm = {
   firstName: "", lastName: "", email: "", phone: "",
   department: "", position: "", basicSalary: "",
   allowances: "", deductions: "", employmentStatus: "ACTIVE",
-  joinDate: "", bio: "", image: null,
+  joinDate: "", bio: "", password: "", // ✅ password added
 };
 
-/* ── Moved OUTSIDE so it never remounts on parent re-render ── */
 const Field = ({ label, name, type = "text", placeholder, half, as, options, form, errors, onChange }) => (
   <div className={half ? "flex-1 min-w-[45%]" : "w-full"}>
     <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
@@ -43,7 +44,9 @@ const Field = ({ label, name, type = "text", placeholder, half, as, options, for
 const AddEmployeeModal = ({ onClose, onAdd }) => {
   const [form, setForm] = useState(defaultForm);
   const [preview, setPreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null); // ✅ store actual file
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false); // ✅ loading state
   const fileRef = useRef();
 
   const handleChange = (e) => {
@@ -55,7 +58,7 @@ const AddEmployeeModal = ({ onClose, onAdd }) => {
   const handleImage = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setForm((prev) => ({ ...prev, image: file }));
+    setImageFile(file); // ✅ store real file
     setPreview(URL.createObjectURL(file));
   };
 
@@ -68,28 +71,37 @@ const AddEmployeeModal = ({ onClose, onAdd }) => {
     if (!form.department) e.department = "Required";
     if (!form.position.trim()) e.position = "Required";
     if (!form.basicSalary) e.basicSalary = "Required";
+    if (!form.joinDate) e.joinDate = "Required";
+    if (!form.password.trim()) e.password = "Required"; // ✅ validate password
+    else if (form.password.length < 6) e.password = "Min 6 characters";
     return e;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
-    const newEmployee = {
-      ...form,
-      _id: Date.now().toString(),
-      id: Date.now().toString(),
-      basicSalary: Number(form.basicSalary),
-      allowances: Number(form.allowances) || 0,
-      deductions: Number(form.deductions) || 0,
-      image: preview ?? null,
-      isDeleted: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      userId: { email: form.email, role: "EMPLOYEE" },
-      user: { email: form.email, role: "EMPLOYEE" },
-    };
-    onAdd(newEmployee);
-    onClose();
+
+    // ✅ Build FormData for file upload
+    const formData = new FormData();
+    Object.entries(form).forEach(([key, value]) => {
+      if (value !== "" && value !== null) formData.append(key, value);
+    });
+    if (imageFile) formData.append("image", imageFile);
+
+    try {
+      setLoading(true);
+      const { data } = await api.post("/employees", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      toast.success("Employee added successfully!");
+      onAdd(data.employee); // ✅ pass real employee from backend
+      onClose();
+    } catch (error) {
+      const msg = error.response?.data?.error || "Failed to add employee";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fieldProps = { form, errors, onChange: handleChange };
@@ -130,8 +142,8 @@ const AddEmployeeModal = ({ onClose, onAdd }) => {
           </div>
 
           <div className="flex gap-3 flex-wrap">
-            <Field label="First Name"  name="firstName" placeholder="John"           half {...fieldProps} />
-            <Field label="Last Name"   name="lastName"  placeholder="Doe"            half {...fieldProps} />
+            <Field label="First Name" name="firstName" placeholder="John"  half {...fieldProps} />
+            <Field label="Last Name"  name="lastName"  placeholder="Doe"   half {...fieldProps} />
           </div>
 
           <div className="flex gap-3 flex-wrap">
@@ -154,9 +166,13 @@ const AddEmployeeModal = ({ onClose, onAdd }) => {
             <Field label="Join Date"      name="joinDate"   type="date"                   half {...fieldProps} />
           </div>
 
-          <Field label="Employment Status" name="employmentStatus" as="select" options={STATUSES} {...fieldProps} />
-          <Field label="Bio" name="bio" as="textarea" placeholder="Short bio (optional)" {...fieldProps} />
+          {/* ✅ Password field added */}
+          <div className="flex gap-3 flex-wrap">
+            <Field label="Password" name="password" type="password" placeholder="Min 6 characters" half {...fieldProps} />
+            <Field label="Employment Status" name="employmentStatus" as="select" options={STATUSES} half {...fieldProps} />
+          </div>
 
+          <Field label="Bio" name="bio" as="textarea" placeholder="Short bio (optional)" {...fieldProps} />
         </div>
 
         {/* Footer */}
@@ -164,8 +180,13 @@ const AddEmployeeModal = ({ onClose, onAdd }) => {
           <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
             Cancel
           </button>
-          <button onClick={handleSubmit} className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors active:scale-[0.98]">
-            Add Employee
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors active:scale-[0.98] disabled:opacity-60 inline-flex items-center gap-2"
+          >
+            {loading && <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />}
+            {loading ? "Adding..." : "Add Employee"}
           </button>
         </div>
 

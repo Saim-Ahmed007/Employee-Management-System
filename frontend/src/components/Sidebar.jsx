@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { dummyProfileData } from './../assets/assets';
 import {
   MenuIcon,
   UserIcon,
@@ -11,17 +10,23 @@ import {
   DollarSignIcon,
   SettingsIcon,
   ChevronRightIcon,
-  LogOutIcon
+  LogOutIcon,
+  Loader2,
+  Loader2Icon
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import api from '../api/axios.js';
 
 const Sidebar = () => {
   const {pathname} = useLocation()
   const [userName, setUserName] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
+  const {user, loading, logOut} = useAuth()
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setUserName(dummyProfileData.firstName + ' ' + dummyProfileData.lastName)
+    api.get('/profile').then(({data}) => {
+      if(data.firstName) setUserName(`${data.firstName} ${data.lastName || ""}`.trim())
+    })
   },[])
 
   useEffect(() => {
@@ -29,12 +34,11 @@ const Sidebar = () => {
     setMobileOpen(false)
   },[pathname])
 
-  // eslint-disable-next-line no-constant-binary-expression
-  const role = "" || "Employee"
+  const role = user?.role
 
   const navItems = [
     {name: 'Dashboard', href: '/dashboard', icon: LayoutGridIcon},
-    role === "Admin" ?
+    role === "ADMIN" ?
     {name: 'Employees', href: '/employees', icon: UserIcon} :
     {name: 'Attendance', href: '/attendance', icon: CalendarIcon},
     {name: 'Leave', href: '/leave', icon: FileTextIcon},
@@ -43,6 +47,7 @@ const Sidebar = () => {
   ]
 
   const handleLogOut = () => {
+    logOut()
     window.location.href = '/login'
   }
 
@@ -73,7 +78,7 @@ const Sidebar = () => {
           </div>
           <div className='min-w-0'>
             <p className='text-[13px] font-medium text-slate-200 truncate'>{userName}</p>
-            <p className='text-[11px] text-slate-500 truncate'>{role === "Admin" ? "Administrator" : "Employee"}</p>
+            <p className='text-[11px] text-slate-500 truncate'>{role === "ADMIN" ? "Administrator" : "Employee"}</p>
           </div>
         </div>
       </div>)}
@@ -84,7 +89,13 @@ const Sidebar = () => {
         </div>
       {/* navigation list */}
         <div className='flex-1 px-3 space-y-0.5 overflow-y-auto'>
-          {navItems.map((item) => {
+          {loading ? (
+            <div className='px-3 py-3 flex items-center gap-2 text-slate-500'>
+              <Loader2Icon className='animate-spin h-4 w-4'/>
+              <span className='text-sm'>Loading...</span>
+            </div>
+          ) : (
+            navItems.map((item) => {
             const isActive = pathname.startsWith(item.href)
             return (
               <Link key={item.name} to={item.href} className={`group flex items-center gap-3 px-4 py-2 rounded-lg relative ${isActive ? 'bg-indigo-500/10' : 'hover:bg-white/5'}`}>
@@ -94,7 +105,9 @@ const Sidebar = () => {
                 {isActive && <ChevronRightIcon className='w-3.5 h-3.5 text-indigo-500/50'/>}
               </Link>
             )
-          })}
+          })
+          )}
+          
         </div>
       {/* log out */}
       <div className='p-3 border-t border-white/6'>
